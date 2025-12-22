@@ -40,21 +40,18 @@ onMounted(fetchMyTests)
 
 <template>
   <div class="tests-page">
-    <!-- Nagłówek całej strony -->
+    <!-- header i przycisk  -->
     <div class="tests-header fade-in">
       <h1 class="tests-title">Moje Testy</h1>
     </div>
-
-    <!-- Przycisk dodania testu -->
     <div class="add-test-container fade-in">
       <button class="btn-add-test" @click="router.push('/create-test')">Utwórz nowy test</button>
     </div>
 
-    <!-- Zawartość -->
     <div v-if="loading" class="info-text">Ładowanie…</div>
     <div v-else-if="error" class="err">{{ error }}</div>
 
-    <!-- Lista testów -->
+    <!-- lista testow -->
     <div v-else-if="tests.length" class="tests-grid fade-in">
       <div v-for="test in tests" :key="test.id" class="test-card">
         <div class="test-card-top">

@@ -89,7 +89,6 @@ onMounted(async () => {
         id: q.id,
         text: q.text,
         question_type: q.question_type || 'ABC',
-        // Wczytujemy czy wielokrotny
         is_multiple_choice: q.is_multiple_choice || false,
         points: q.points,
         options: q.QuestionOptions.map((o) => ({ text: o.text, is_correct: o.is_correct })),
@@ -113,7 +112,7 @@ const addQuestion = () => {
     id: null,
     text: '',
     question_type: 'ABC',
-    is_multiple_choice: false, // domyślnie false
+    is_multiple_choice: false,
     points: 1,
     options: [
       { text: '', is_correct: false },
@@ -186,7 +185,6 @@ const saveTest = async () => {
         test_id: currentTestId,
         text: q.text,
         question_type: q.question_type,
-        // Wysyłamy is_multiple_choice
         is_multiple_choice: q.is_multiple_choice,
         points: q.points,
         options: q.question_type === 'OPEN' ? [] : q.options.filter((o) => o.text.trim() !== ''),
@@ -215,10 +213,6 @@ const saveTest = async () => {
       <h2>1. Dane ogólne</h2>
       <label>Nazwa testu</label>
       <input v-model="testData.title" placeholder="Np. Kolokwium nr 1" />
-
-      <!--      <label>Kod dostępu</label>
-      <input :value="testData.access_code || '(Auto-generowany)'" disabled class="disabled-input" />
--->
       <label>Opis</label>
       <textarea v-model="testData.description"></textarea>
       <label>Limit podejść (0 = brak limitu)</label>

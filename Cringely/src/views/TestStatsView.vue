@@ -22,21 +22,20 @@ const stats = ref(null)
 const loading = ref(true)
 const expandedSessionId = ref(null)
 
-// --- ZMIENNE DO SORTOWANIA ---
+// zmienne do sortowania
 const sortColumn = ref('started_at')
 const sortDirection = ref('desc')
 
-// --- LOGIKA OCEN ---
+// logika ocen
 const calculateGrade = (currentScore) => {
   if (!stats.value || !stats.value.totalMaxPoints || stats.value.totalMaxPoints === 0) return '-'
   const max = stats.value.totalMaxPoints
   const percentage = (currentScore / max) * 100
   let thresholds = stats.value.scoreThresholds || []
   if (thresholds.length === 0) return '?'
-  
-  // Kopiujemy tablicę przed sortowaniem, by nie modyfikować oryginału (Vue warning fix)
+
   thresholds = [...thresholds].sort((a, b) => b.min - a.min)
-  
+
   for (const t of thresholds) {
     if (percentage >= t.min) return t.grade
   }
@@ -49,7 +48,7 @@ const getGradeColorClass = (grade) => {
   return 'grade-good'
 }
 
-// --- SORTOWANIE ---
+// sortowanie
 const sortedSessions = computed(() => {
   if (!stats.value || !stats.value.sessions) return []
   const list = [...stats.value.sessions]
@@ -86,7 +85,7 @@ const getSortArrow = (column) => {
   return sortDirection.value === 'asc' ? '▲' : '▼'
 }
 
-// --- WYKRESY ---
+// wykresy
 const passFailData = computed(() => {
   if (!stats.value || !stats.value.sessions) return null
   let passed = 0
@@ -124,20 +123,19 @@ const gradeDistributionData = computed(() => {
 
 const chartOptions = { responsive: true, maintainAspectRatio: false }
 
-// --- API ---
+// api
 const fetchStats = async () => {
   loading.value = true
   try {
     const { data } = await api.get(`/tests/${route.params.id}/stats`)
     stats.value = data
-    
-    // NAPRAWA REAKTYWNOŚCI: Inicjalizujemy pole 'newPoints' dla każdej odpowiedzi
+
     if (stats.value.sessions) {
-      stats.value.sessions.forEach(session => {
+      stats.value.sessions.forEach((session) => {
         if (session.Answers) {
-          session.Answers.forEach(ans => {
-            // Domyślnie pole edycji ma aktualną liczbę punktów
-            ans.newPoints = ans.points_earned !== null ? ans.points_earned : 0;
+          session.Answers.forEach((ans) => {
+            // domyslnie pole edycji ma aktualna liczbe punktow
+            ans.newPoints = ans.points_earned !== null ? ans.points_earned : 0
           })
         }
       })
@@ -157,74 +155,77 @@ const toggleDetails = (sessionId) => {
 
 const savePoints = async (session, answerId, points) => {
   try {
-    const parsedPoints = parseFloat(points);
+    const parsedPoints = parseFloat(points)
     if (isNaN(parsedPoints)) {
-        alert("Wpisz poprawną liczbę punktów");
-        return;
+      alert('Wpisz poprawną liczbę punktów')
+      return
     }
 
     await api.post(`/tests/sessions/${session.id}/grade`, {
       grades: { [answerId]: parsedPoints },
     })
 
-    // Aktualizujemy stan lokalny po sukcesie
+    // aktualizacja stanu lokalnego po sukcesie
     const ans = session.Answers.find((a) => a.id === answerId)
     if (ans) {
       ans.points_earned = parsedPoints
       if (ans.points_earned === ans.Question.points) ans.is_correct = true
       else if (ans.points_earned === 0) ans.is_correct = false
-      else ans.is_correct = null // Częściowe punkty
+      else ans.is_correct = null // czesciowe punkty
     }
-    
-    // Opcjonalnie: odśwież całość, żeby przeliczyć średnie/wykresy
-    // await fetchStats() 
-    
-    // Ale szybciej zaktualizować wynik sesji lokalnie:
-    let newTotal = 0;
-    session.Answers.forEach(a => newTotal += (a.points_earned || 0));
-    session.score = newTotal;
 
-    alert("Zapisano!");
+
+    // aktualizacja wyniku sesji lokalnie
+    let newTotal = 0
+    session.Answers.forEach((a) => (newTotal += a.points_earned || 0))
+    session.score = newTotal
+
+    alert('Zapisano!')
   } catch (e) {
     alert('Błąd zapisu oceny')
-    console.error(e);
+    console.error(e)
   }
 }
 
-// Funkcja pomocnicza do wyświetlania treści odpowiedzi zamiast ID
+// odpowiedzi zamiast id 
 const formatAnswer = (question, rawAnswer) => {
-    if (!rawAnswer) return '(Brak)';
-    
-    // Jeśli backend nie przesłał definicji pytań z opcjami, zwracamy oryginał
-    if (!stats.value.questions) return rawAnswer;
+  if (!rawAnswer) return '(Brak)'
 
-    // Znajdź pełną definicję pytania w stats (tam powinny być opcje, o ile backend je wysyła)
-    const fullQuestion = stats.value.questions.find(q => q.id === question.id);
-    
-    // Jeśli pytanie zamknięte i mamy opcje
-    if (fullQuestion && fullQuestion.question_type === 'ABC') {
-        // Logika dla checkboxów/radio
-        let ids = [];
-        try {
-            ids = Array.isArray(rawAnswer) ? rawAnswer : JSON.parse(rawAnswer);
-        } catch {
-            ids = [rawAnswer];
-        }
-        if (!Array.isArray(ids)) ids = [ids]; // Upewnienie się
+  if (!stats.value.questions) return rawAnswer
 
-        // Tutaj potrzebujemy 'QuestionOptions'. Jeśli backend ich nie wysyła w /stats,
-        // to ta funkcja zwróci po prostu ID.
-        // Żeby to działało idealnie, w backendzie w /stats trzeba dodać include: [QuestionOption]
-        if (fullQuestion.QuestionOptions) {
-             const labels = ids.map(id => {
-                const opt = fullQuestion.QuestionOptions.find(o => o.id == id);
-                return opt ? opt.text : id;
-            });
-            return labels.join(', ');
-        }
+  const fullQuestion = stats.value.questions.find((q) => q.id === question.id)
+
+  if (fullQuestion && fullQuestion.question_type === 'ABC') {
+    let ids = []
+    try {
+      ids = Array.isArray(rawAnswer) ? rawAnswer : JSON.parse(rawAnswer)
+    } catch {
+      ids = [rawAnswer]
     }
-    
-    return rawAnswer;
+    if (!Array.isArray(ids)) ids = [ids] 
+
+    if (fullQuestion.QuestionOptions) {
+      const labels = ids.map((id) => {
+        const opt = fullQuestion.QuestionOptions.find((o) => o.id == id)
+        return opt ? opt.text : id
+      })
+      return labels.join(', ')
+    }
+  }
+
+  return rawAnswer
+}
+
+const limitPoints = (ans) => {
+  const max = ans.Question.points
+
+  if (ans.newPoints > max) {
+    ans.newPoints = max
+  }
+
+  if (ans.newPoints < 0) {
+    ans.newPoints = 0
+  }
 }
 </script>
 
@@ -244,11 +245,11 @@ const formatAnswer = (question, rawAnswer) => {
         </div>
         <div class="tstats-card">
           <h3 class="tstats-card-title">Średnia pkt</h3>
-          <p class="tstats-big-num">{{ stats.avgScore }}</p>
+          <p class="tstats-big-num">{{ stats.avgScore }} / {{ stats.totalMaxPoints }}</p>
         </div>
         <div class="tstats-card">
           <h3 class="tstats-card-title">Max wynik pkt</h3>
-          <p class="tstats-big-num">{{ stats.maxScore }}</p>
+          <p class="tstats-big-num">{{ stats.maxScore }} / {{ stats.totalMaxPoints }}</p>
         </div>
       </div>
 
@@ -348,7 +349,9 @@ const formatAnswer = (question, rawAnswer) => {
                         min="0"
                         :max="ans.Question.points"
                         step="0.5"
+                        @input="limitPoints(ans)"
                       />
+
                       <span class="tstats-slash">/ {{ ans.Question.points }}</span>
                     </div>
                   </td>
@@ -370,25 +373,3 @@ const formatAnswer = (question, rawAnswer) => {
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Te style powinny być dopasowane do Twojego projektu */
-.tstats-points-input {
-    width: 60px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    text-align: center;
-}
-.tstats-save-btn {
-    background: #3498db;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-.tstats-save-btn:hover {
-    background: #2980b9;
-}
-</style>

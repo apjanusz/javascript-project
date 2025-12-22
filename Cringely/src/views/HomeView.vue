@@ -28,25 +28,6 @@ onMounted(async () => {
       <p>Ucz się mordko mordeczko.</p>
     </header>
 
-    <section class="latest-tests">
-      <h2>Ostatnio dodane testy</h2>
-      <div v-if="loading" class="loading">Ładowanie testów...</div>
-      <div v-else-if="recentTests.length === 0" class="no-tests">
-        Brak publicznych testów do wyświetlenia.
-      </div>
-      <div v-else class="test-list">
-        <RouterLink
-          v-for="test in recentTests"
-          :key="test.access_code"
-          :to="`/tests/${test.access_code}`"
-          class="test-card"
-        >
-          <h3>{{ test.title }}</h3>
-          <p>{{ test.description }}</p>
-        </RouterLink>
-      </div>
-    </section>
-
     <section class="actions">
       <h2>Zacznij teraz</h2>
       <div class="action-buttons">
@@ -86,6 +67,10 @@ onMounted(async () => {
   font-size: 1.2rem;
   color: var(--color-text-soft);
   margin-bottom: 3rem;
+}
+
+.actions {
+  flex-direction: column;
 }
 
 .actions,

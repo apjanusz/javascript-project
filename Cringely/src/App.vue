@@ -11,7 +11,6 @@ const auth = useAuthStore()
       <RouterLink to="/" class="nav-logo"> Cringely </RouterLink>
 
       <RouterLink to="/" class="nav-link">Home</RouterLink>
-      <RouterLink to="/about" class="nav-link">About</RouterLink>
       <RouterLink v-if="auth.isAuthenticated" to="/my-tests" class="nav-link"
         >Moje Testy</RouterLink
       >
